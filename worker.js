@@ -86,6 +86,19 @@ const htmlContent = `<!DOCTYPE html>
       </div>
     </div>
 
+    <div class="input-section" id="geminiConfig" style="display: none;">
+      <div class="config-row">
+        <div class="config-item">
+          <label for="geminiProxy">Gemini Proxy 地址</label>
+          <input type="text" id="geminiProxy" value="" placeholder="留空使用官方地址，填写格式：https://your-proxy.com">
+        </div>
+        <div class="config-item">
+          <label for="geminiModel">Gemini 模型</label>
+          <input type="text" id="geminiModel" value="" placeholder="留空使用 gemini-1.5-flash-8b，可选：gemini-1.5-pro 等">
+        </div>
+      </div>
+    </div>
+
     <div class="input-section">
       <div class="input-header">
         <label for="tokens">API KEYS</label>
@@ -880,8 +893,11 @@ textarea {
 
 .modal-message {
   color: #6b7280;
-  line-height: 1.5;
+  line-height: 1.6;
   margin-bottom: 20px;
+  white-space: pre-line;
+  text-align: center;
+  font-size: 0.95rem;
 }
 
 .modal-actions {
@@ -959,6 +975,52 @@ textarea {
   flex-direction: column;
   gap: 16px;
   margin: 24px 0;
+}
+
+/* 撒花动画样式 */
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  font-size: 24px;
+  animation: confetti-fall linear;
+  opacity: 0.9;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti-piece:nth-child(odd) {
+  animation-duration: 3s;
+}
+
+.confetti-piece:nth-child(even) {
+  animation-duration: 2.5s;
+}
+
+.confetti-piece:nth-child(3n) {
+  animation-duration: 4s;
+}
+
+.confetti-piece:nth-child(4n) {
+  animation-duration: 3.5s;
 }
 
 /* 响应式设计优化 */
@@ -1108,11 +1170,17 @@ function updatePlaceholder() {
   // 清空之前的测试结果
   clearResults();
 
-  // 显示/隐藏 OpenAI 配置
+  // 显示/隐藏配置区域
+  const geminiConfig = document.getElementById('geminiConfig');
   if (provider === 'openai') {
     openaiConfig.style.display = 'block';
+    geminiConfig.style.display = 'none';
+  } else if (provider === 'gemini') {
+    openaiConfig.style.display = 'none';
+    geminiConfig.style.display = 'block';
   } else {
     openaiConfig.style.display = 'none';
+    geminiConfig.style.display = 'none';
   }
 
   // 根据是否支持余额查询来显示/隐藏相关元素
@@ -1242,15 +1310,82 @@ function showCustomModal(message, type = 'success', title = '') {
   messageEl.textContent = message;
   modal.classList.add('show');
 
-  // 3秒后自动关闭
+  // 检测完成的弹窗延长显示时间
+  const autoCloseTime = type === 'success' && title.includes('完成') ? 5000 : 3000;
   setTimeout(() => {
     closeCustomModal();
-  }, 3000);
+  }, autoCloseTime);
 }
 
 function closeCustomModal() {
   const modal = document.getElementById('customModal');
   modal.classList.remove('show');
+}
+
+// 撒花动画函数
+function createConfetti() {
+  const confettiContainer = document.createElement('div');
+  confettiContainer.className = 'confetti-container';
+  document.body.appendChild(confettiContainer);
+
+  const emojis = ['🎉', '🎊', '✨', '🎈', '🌟', '💫', '🎆', '🎇', '🏆', '👏'];
+  const numPieces = 50;
+
+  for (let i = 0; i < numPieces; i++) {
+    const confettiPiece = document.createElement('div');
+    confettiPiece.className = 'confetti-piece';
+    confettiPiece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    
+    // 随机位置
+    confettiPiece.style.left = Math.random() * 100 + '%';
+    confettiPiece.style.animationDelay = Math.random() * 2 + 's';
+    
+    // 随机大小
+    const size = Math.random() * 16 + 16; // 16px到32px
+    confettiPiece.style.fontSize = size + 'px';
+    
+    confettiContainer.appendChild(confettiPiece);
+  }
+
+  // 5秒后清理
+  setTimeout(() => {
+    if (confettiContainer && confettiContainer.parentNode) {
+      confettiContainer.parentNode.removeChild(confettiContainer);
+    }
+  }, 5000);
+}
+
+// 检测完成庆祝函数
+function celebrateCompletion(validCount, totalCount) {
+  if (totalCount > 0) {
+    createConfetti();
+    
+    // 计算成功率
+    const successRate = Math.round((validCount / totalCount) * 100);
+    const invalidCount = totalCount - validCount;
+    
+    // 创建紧凑的文本格式消息
+    let message = \`🎉 检测任务完成！\\n\\n\`;
+    message += \`📊 总共检测：\${totalCount} 个KEY\\n\`;
+    message += \`✅ 有效KEY：\${validCount} 个\\n\`;
+    message += \`❌ 无效KEY：\${invalidCount} 个\\n\`;
+    message += \`📈 成功率：\${successRate}%\`;
+    
+    // 根据成功率添加庆祝文字
+    if (successRate >= 80) {
+      message += \`\\n\\n🏆 太棒了！成功率超高！\`;
+    } else if (successRate >= 50) {
+      message += \`\\n\\n👍 不错的结果！\`;
+    } else if (successRate > 0) {
+      message += \`\\n\\n💪 继续加油！\`;
+    } else {
+      message += \`\\n\\n🔍 建议检查KEY格式或来源\`;
+    }
+    
+    setTimeout(() => {
+      showCustomModal(message, 'success', '检测完成');
+    }, 500);
+  }
 }
 
 // 页面加载时初始化
@@ -1349,6 +1484,27 @@ async function checkTokens() {
   }
 
   const provider = document.querySelector('input[name="provider"]:checked').value;
+  
+  // 如果是 Gemini 提供商，提前校验配置格式
+  if (provider === 'gemini') {
+    const geminiProxy = document.getElementById('geminiProxy')?.value.trim();
+    const geminiModel = document.getElementById('geminiModel')?.value.trim();
+    
+    // 校验 Proxy 地址格式
+    if (geminiProxy) {
+      const urlPattern = /^https?:\\/\\/.+/i;
+      if (!urlPattern.test(geminiProxy)) {
+        showCustomModal("Proxy地址格式无效！\\n必须以 http:// 或 https:// 开头\\n\\n示例：https://your-proxy.com", "error");
+        return;
+      }
+    }
+    
+    // 校验模型名称格式
+    if (geminiModel && !geminiModel.toLowerCase().startsWith('gemini')) {
+      showCustomModal("模型名称格式无效！\\n必须以 'gemini' 开头\\n\\n示例：gemini-1.5-flash-8b", "error");
+      return;
+    }
+  }
   const providerConfig = API_PROVIDERS[provider];
   const threshold = parseFloat(thresholdInput.value) || 1;
   const concurrency = parseInt(concurrencyInput.value) || 5;
@@ -1477,6 +1633,15 @@ async function checkTokens() {
   try {
     // 并发执行
     await runWithConcurrencyLimit(tasks, concurrency, onSingleResult);
+    
+    // 检测完成后触发庆祝动画
+    // 对于支持余额查询的提供商，所有余额查询成功的都算有效KEY
+    // 对于不支持余额查询的提供商，只有validCount
+    const totalValidCount = providerConfig.hasBalance 
+      ? validCount + lowBalanceCount + zeroBalanceCount 
+      : validCount;
+    celebrateCompletion(totalValidCount, uniqueTokens.length);
+    
   } catch (err) {
     showCustomModal("检测失败: " + err.message, "error");
     console.error(err);
@@ -1607,9 +1772,21 @@ async function checkSilicoFlowToken(token) {
 }
 
 // Google Gemini TOKEN检测
-async function checkGeminiToken(token) {//https://generativelanguage.googleapis.com
+async function checkGeminiToken(token) {
   try {
-    const response = await fetch(\`https://hzruoo-gemi.hf.space/v1beta/models/gemini-1.5-flash-8b:generateContent?key=\${token}\`, {
+    // 获取 proxy 配置，如果有配置则使用 proxy，否则使用官方地址
+    const geminiProxy = document.getElementById('geminiProxy')?.value.trim();
+    const baseUrl = geminiProxy || 'https://generativelanguage.googleapis.com';
+    
+    // 获取模型配置，如果留空则使用默认模型
+    const geminiModel = document.getElementById('geminiModel')?.value.trim() || 'gemini-1.5-flash-8b';
+    
+    // 确保 baseUrl 以正确格式结尾
+    const apiUrl = baseUrl.endsWith('/') 
+      ? \`\${baseUrl}v1beta/models/\${geminiModel}:generateContent?key=\${token}\`
+      : \`\${baseUrl}/v1beta/models/\${geminiModel}:generateContent?key=\${token}\`;
+
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

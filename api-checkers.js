@@ -113,9 +113,21 @@ async function checkSilicoFlowToken(token) {
 }
 
 // Google Gemini TOKEN检测
-async function checkGeminiToken(token) {//https://generativelanguage.googleapis.com
+async function checkGeminiToken(token) {
   try {
-    const response = await fetch(`https://hzruoo-gemi.hf.space/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${token}`, {
+    // 获取 proxy 配置，如果有配置则使用 proxy，否则使用官方地址
+    const geminiProxy = document.getElementById('geminiProxy')?.value.trim();
+    const baseUrl = geminiProxy || 'https://generativelanguage.googleapis.com';
+    
+    // 获取模型配置，如果留空则使用默认模型
+    const geminiModel = document.getElementById('geminiModel')?.value.trim() || 'gemini-1.5-flash-8b';
+    
+    // 确保 baseUrl 以正确格式结尾
+    const apiUrl = baseUrl.endsWith('/') 
+      ? `${baseUrl}v1beta/models/${geminiModel}:generateContent?key=${token}`
+      : `${baseUrl}/v1beta/models/${geminiModel}:generateContent?key=${token}`;
+
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

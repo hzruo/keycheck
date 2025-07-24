@@ -632,8 +632,11 @@ textarea {
 
 .modal-message {
   color: #6b7280;
-  line-height: 1.5;
+  line-height: 1.6;
   margin-bottom: 20px;
+  white-space: pre-line;
+  text-align: center;
+  font-size: 0.95rem;
 }
 
 .modal-actions {
@@ -711,6 +714,52 @@ textarea {
   flex-direction: column;
   gap: 16px;
   margin: 24px 0;
+}
+
+/* 撒花动画样式 */
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  font-size: 24px;
+  animation: confetti-fall linear;
+  opacity: 0.9;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti-piece:nth-child(odd) {
+  animation-duration: 3s;
+}
+
+.confetti-piece:nth-child(even) {
+  animation-duration: 2.5s;
+}
+
+.confetti-piece:nth-child(3n) {
+  animation-duration: 4s;
+}
+
+.confetti-piece:nth-child(4n) {
+  animation-duration: 3.5s;
 }
 
 /* 响应式设计优化 */
